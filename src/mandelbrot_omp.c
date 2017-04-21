@@ -61,7 +61,7 @@ void compute_mandelbrot(){
     double c_x;
     double c_y;
 
-    int chunk = 10;
+    int chunk = 20;
 
     #pragma omp parallel for \
         private(z_x, z_y, z_x_squared, z_y_squared, iteration, i_x, i_y, i_k, c_x, c_y)\

@@ -104,6 +104,7 @@ void *compute_mandelbrot_thread(void *pthreadid) {
                 z_x_squared = z_x * z_x;
                 z_y_squared = z_y * z_y;
             }
+            i_k++;
         }
     }
 }
