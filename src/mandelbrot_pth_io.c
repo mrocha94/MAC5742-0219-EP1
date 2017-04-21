@@ -19,11 +19,42 @@ double pixel_height;
 int iteration_max = 200;
 
 int image_size;
+unsigned char **image_buffer;
 
 int i_x_max;
 int i_y_max;
 int image_buffer_size;
 int current_pixel;
+
+int gradient_size = 16;
+int colors[17][3] = {
+                        {66, 30, 15},
+                        {25, 7, 26},
+                        {9, 1, 47},
+                        {4, 4, 73},
+                        {0, 7, 100},
+                        {12, 44, 138},
+                        {24, 82, 177},
+                        {57, 125, 209},
+                        {134, 181, 229},
+                        {211, 236, 248},
+                        {241, 233, 191},
+                        {248, 201, 95},
+                        {255, 170, 0},
+                        {204, 128, 0},
+                        {153, 87, 0},
+                        {106, 52, 3},
+                        {16, 16, 16},
+                    };
+
+void allocate_image_buffer(){
+    int rgb_size = 3;
+    image_buffer = (unsigned char **) malloc(sizeof(unsigned char *) * image_buffer_size);
+
+    for(int i = 0; i < image_buffer_size; i++){
+        image_buffer[i] = (unsigned char *) malloc(sizeof(unsigned char) * rgb_size);
+    };
+};
 
 void init(int argc, char *argv[]){
     if(argc < 6){
@@ -53,6 +84,42 @@ void init(int argc, char *argv[]){
     };
 };
 
+void update_rgb_buffer(int iteration, int x, int y){
+    int color;
+
+    if(iteration == iteration_max){
+        image_buffer[(i_y_max * y) + x][0] = colors[gradient_size][0];
+        image_buffer[(i_y_max * y) + x][1] = colors[gradient_size][1];
+        image_buffer[(i_y_max * y) + x][2] = colors[gradient_size][2];
+    }
+    else{
+        color = iteration % gradient_size;
+
+        image_buffer[(i_y_max * y) + x][0] = colors[color][0];
+        image_buffer[(i_y_max * y) + x][1] = colors[color][1];
+        image_buffer[(i_y_max * y) + x][2] = colors[color][2];
+    };
+};
+
+void write_to_file(){
+    FILE * file;
+    char * filename               = "output_pth.ppm";
+    char * comment                = "# ";
+
+    int max_color_component_value = 255;
+
+    file = fopen(filename,"wb");
+
+    fprintf(file, "P6\n %s\n %d\n %d\n %d\n", comment,
+            i_x_max, i_y_max, max_color_component_value);
+
+    for(int i = 0; i < image_buffer_size; i++){
+        fwrite(image_buffer[i], 1 , 3, file);
+    };
+
+    fclose(file);
+};
+
 void *compute_mandelbrot_thread(void *pthreadid) {
     double z_x;
     double z_y;
@@ -64,12 +131,11 @@ void *compute_mandelbrot_thread(void *pthreadid) {
     int i_x;
     int i_y;
 
+    int i;
+
     double c_x;
     double c_y;
     int i_k;
-
-    int i;
-
     while(1){
         pthread_mutex_lock(&mutex);
         i_k = current_pixel;
@@ -103,7 +169,10 @@ void *compute_mandelbrot_thread(void *pthreadid) {
 
                 z_x_squared = z_x * z_x;
                 z_y_squared = z_y * z_y;
-            }
+            };
+
+            update_rgb_buffer(iteration, i_x, i_y);
+            i_k++;
         }
     }
 }
@@ -116,7 +185,6 @@ void compute_mandelbrot(){
     threads = (pthread_t *) malloc(sizeof(pthread_t) * num_pthreads);
     current_pixel = 0;
 
-    // cria as pthread
     for (i = 0; i < num_pthreads; i++) {
         error_code = pthread_create(&threads[i], NULL, compute_mandelbrot_thread, NULL);
         if (error_code){
@@ -125,7 +193,6 @@ void compute_mandelbrot(){
         }
     }
 
-    // espera todas as threads terminarem
     for(i = 0; i < num_pthreads; i++) {
         error_code = pthread_join(threads[i], NULL);
         if (error_code) {
@@ -133,11 +200,18 @@ void compute_mandelbrot(){
             exit(-1);
         }
     }
+
     pthread_mutex_destroy(&mutex);
 };
 
 int main(int argc, char *argv[]){
     init(argc, argv);
+
+    allocate_image_buffer();
+
     compute_mandelbrot();
+
+    write_to_file();
+
     return 0;
 };
