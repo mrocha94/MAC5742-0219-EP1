@@ -3,7 +3,7 @@
 set -o xtrace
 
 MEASUREMENTS=10
-ITERATIONS=2
+ITERATIONS=10
 
 INITIAL_SIZE=16
 INITIAL_THREADS=1
@@ -42,5 +42,5 @@ for NAME in ${NAMES[@]}; do
     NUM_THREADS=$INITIAL_THREADS
 
     mv *.log results/$NAME
-    rm output_seq.ppm
 done
+rm output_seq.ppm
