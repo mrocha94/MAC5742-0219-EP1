@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <pthread.h>
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+int num_pthreads;
 
 double c_x_min;
 double c_x_max;
@@ -18,6 +22,7 @@ unsigned char **image_buffer;
 int i_x_max;
 int i_y_max;
 int image_buffer_size;
+int current_pixel;
 
 int gradient_size = 16;
 int colors[17][3] = {
@@ -72,6 +77,8 @@ void init(int argc, char *argv[]){
 
         pixel_width       = (c_x_max - c_x_min) / i_x_max;
         pixel_height      = (c_y_max - c_y_min) / i_y_max;
+        num_pthreads    = atoi(getenv("PTH_NUM_THREADS"));
+
     };
 };
 
@@ -111,7 +118,7 @@ void write_to_file(){
     fclose(file);
 };
 
-void compute_mandelbrot(){
+void *compute_mandelbrot_thread(void *pthreadid) {
     double z_x;
     double z_y;
     double z_x_squared;
@@ -124,37 +131,100 @@ void compute_mandelbrot(){
 
     double c_x;
     double c_y;
+    int i_k;
+    while(1){
+        pthread_mutex_lock(&mutex);
+        i_k = current_pixel++;
+        pthread_mutex_unlock(&mutex);
+        if (i_k >= i_y_max * i_x_max) pthread_exit(NULL);
 
-    for(i_y = 0; i_y < i_y_max; i_y++){
+        i_y = i_k / i_x_max;
         c_y = c_y_min + i_y * pixel_height;
-
         if(fabs(c_y) < pixel_height / 2){
             c_y = 0.0;
+        }
+
+        i_x = i_k % i_x_max;
+        c_x         = c_x_min + i_x * pixel_width;
+
+        z_x         = 0.0;
+        z_y         = 0.0;
+
+        z_x_squared = 0.0;
+        z_y_squared = 0.0;
+
+        for(iteration = 0;
+            iteration < iteration_max && \
+            ((z_x_squared + z_y_squared) < escape_radius_squared);
+            iteration++){
+            z_y         = 2 * z_x * z_y + c_y;
+            z_x         = z_x_squared - z_y_squared + c_x;
+
+            z_x_squared = z_x * z_x;
+            z_y_squared = z_y * z_y;
         };
 
-        for(i_x = 0; i_x < i_x_max; i_x++){
-            c_x         = c_x_min + i_x * pixel_width;
+        update_rgb_buffer(iteration, i_x, i_y);
+    }
+}
 
-            z_x         = 0.0;
-            z_y         = 0.0;
+void compute_mandelbrot(){
+    pthread_t *threads;
+    int i;
+    int error_code;
 
-            z_x_squared = 0.0;
-            z_y_squared = 0.0;
+    threads = (pthread_t *) malloc(sizeof(pthread_t) * num_pthreads);
+    current_pixel = 0;
 
-            for(iteration = 0;
-                iteration < iteration_max && \
-                ((z_x_squared + z_y_squared) < escape_radius_squared);
-                iteration++){
-                z_y         = 2 * z_x * z_y + c_y;
-                z_x         = z_x_squared - z_y_squared + c_x;
+    for (i = 0; i < num_pthreads; i++) {
+        error_code = pthread_create(&threads[i], NULL, compute_mandelbrot_thread, NULL);
+        if (error_code){
+            printf("ERROR pthread_create(): %d\n", error_code);
+            exit(-1);
+        }
+    }
 
-                z_x_squared = z_x * z_x;
-                z_y_squared = z_y * z_y;
-            };
+    for(i = 0; i < num_pthreads; i++) {
+        error_code = pthread_join(threads[i], NULL);
+        if (error_code) {
+            printf("ERROR; return code from pthread_join() is %d\n", error_code);
+            exit(-1);
+        }
+    }
 
-            update_rgb_buffer(iteration, i_x, i_y);
-        };
-    };
+    pthread_mutex_destroy(&mutex);
+
+    // for(i_y = 0; i_y < i_y_max; i_y++){
+    //     c_y = c_y_min + i_y * pixel_height;
+    //
+    //     if(fabs(c_y) < pixel_height / 2){
+    //         c_y = 0.0;
+    //     };
+    //
+    //     for(i_x = 0; i_x < i_x_max; i_x++){
+    //         c_x         = c_x_min + i_x * pixel_width;
+    //
+    //         z_x         = 0.0;
+    //         z_y         = 0.0;
+    //
+    //         z_x_squared = 0.0;
+    //         z_y_squared = 0.0;
+    //
+    //         pthread_create()
+    //         for(iteration = 0;
+    //             iteration < iteration_max && \
+    //             ((z_x_squared + z_y_squared) < escape_radius_squared);
+    //             iteration++){
+    //             z_y         = 2 * z_x * z_y + c_y;
+    //             z_x         = z_x_squared - z_y_squared + c_x;
+    //
+    //             z_x_squared = z_x * z_x;
+    //             z_y_squared = z_y * z_y;
+    //         };
+    //
+    //         update_rgb_buffer(iteration, i_x, i_y);
+    //     };
+    // };
 };
 
 int main(int argc, char *argv[]){

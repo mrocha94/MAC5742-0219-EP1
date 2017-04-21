@@ -51,6 +51,7 @@ void allocate_image_buffer(){
 };
 
 void init(int argc, char *argv[]){
+    printf("%d\n", omp_get_max_threads());
     if(argc < 6){
         printf("usage: ./mandelbrot_omp c_x_min c_x_max c_y_min c_y_max image_size\n");
         printf("examples with image_size = 11500:\n");
