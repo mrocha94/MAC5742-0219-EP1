@@ -3,7 +3,7 @@
 set -o xtrace
 
 MEASUREMENTS=10
-ITERATIONS=10
+ITERATIONS=4
 
 INITIAL_SIZE=16
 INITIAL_THREADS=1
@@ -14,6 +14,7 @@ NAMES=('mandelbrot_seq' 'mandelbrot_seq_io' 'mandelbrot_pth' 'mandelbrot_omp')
 THREAD_ITERATIONS=(1 1 6 6)
 
 make
+rm -rf results
 mkdir results
 
 K=0
