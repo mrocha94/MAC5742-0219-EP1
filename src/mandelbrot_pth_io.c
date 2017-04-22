@@ -3,7 +3,7 @@
 #include <math.h>
 #include <pthread.h>
 
-#define CHUNK 20
+#define CHUNK 8
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int num_pthreads;
