@@ -1,3 +1,6 @@
+// Felipe Brigalante    8941280
+// Mateus Rocha Mazzari 8941255
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

@@ -1,3 +1,6 @@
+# Felipe Brigalante    8941280
+# Mateus Rocha Mazzari 8941255
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -59,7 +62,7 @@ regex = re.compile(pattern)
 
 for method in methods:
   for region in regions:
-    filename = "results_final/mandelbrot_{0}/{1}.log".format(method, region)
+    filename = "results/mandelbrot_{0}/{1}.log".format(method, region)
     textfile = open(filename, 'r')
     filetext = textfile.read()
     textfile.close()
@@ -74,11 +77,26 @@ for method in methods:
       item["deviation"] = float(match[3].replace(',', '.'))
       data.append(item)
 
-# lines = make_plot({"thread": [1,2,4,8,16,32], "size": 8192, "method": ["pth", "omp"], "region": "full", "x": "thread", "line": "method"})
-# lines = make_plot({"thread": 1, "size": sizes, "method": methods, "region": "full", "x": "size", "line": "method"})
-#lines = make_plot({"thread": 1, "size": sizes, "method": "seq", "region": regions, "x": "size", "line": "region"})
+
+# SEQ:
+# lines = make_plot({"thread": 1, "size": sizes, "method": "seq_io", "region": regions, "x": "size", "line": "region"})
+# lines = make_plot({"thread": 1, "size": sizes, "method": "seq", "region": regions, "x": "size", "line": "region"})
+# lines = make_plot({"thread": 1, "size": sizes, "method": ["seq", "seq_io"], "region": "full", "x": "size", "line": "method"})
+
+# PTH
+#lines = make_plot({"thread": threads, "size": 8192, "method": "pth", "region": regions, "x": "thread", "line": "region"})
+#lines = make_plot({"thread": threads, "size": 32, "method": "pth", "region": regions, "x": "thread", "line": "region"})
+
+# OMP
 # lines = make_plot({"thread": threads, "size": 8192, "method": "omp", "region": regions, "x": "thread", "line": "region"})
-lines = make_plot({"thread": threads, "size": 32, "method": methods, "region": "full", "x": "thread", "line": "method"})
+# lines = make_plot({"thread": threads, "size": 32, "method": "omp", "region": regions, "x": "thread", "line": "region"})
+
+# Comparativo Geral
+lines = make_plot({"thread": 1, "size": sizes, "method": methods, "region": "full", "x": "size", "line": "method"})
+lines = make_plot({"thread": threads, "size": 8192, "method": ["pth", "omp"], "region": "full", "x": "thread", "line": "method"})
+lines = make_plot({"thread": threads, "size": 256, "method": ["pth", "omp"], "region": "full", "x": "thread", "line": "method"})
+
+
 
 # for method in ["omp", "pth"]:
 #   region = "full"

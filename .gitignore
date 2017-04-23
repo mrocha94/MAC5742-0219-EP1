@@ -1,13 +1,9 @@
 *.swp
 *.ppm
 
-measurements/
-
 *.aux
 *.bbl
 *.blg
-
-*.pdf
 *.spl
 
 # Object files
